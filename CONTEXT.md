@@ -2,7 +2,7 @@
 
 This repo contains AI Agent skills for software engineering.
 
-I am highly inspired by [Matt Pocock's work on AI Agent skills](https://github.com/mattpocock/skills) and I intend to use his skills as a foundation for my own.
+It is am highly inspired by [Matt Pocock's work on AI Agent skills](https://github.com/mattpocock/skills) and we intend to use his skills as a foundation this one.
 
 ---
 
