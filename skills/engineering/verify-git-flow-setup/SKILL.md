@@ -5,7 +5,7 @@ description: Verify that the git-flow-check and git-flow-add-restriction skills 
 
 # Verify Git Flow Setup
 
-Use this skill to verify both the local skill installation and the repository-side prerequisites for a solo-maintainer GitHub Flow workflow. This skill is a validation and readiness checklist: it does not create branch protection by itself unless the operator explicitly asks to run one of the write-capable helper scripts.[web:27][web:155]
+Use this skill to verify both the local skill installation and the repository-side prerequisites for a solo-maintainer GitHub Flow workflow. This skill is a validation and readiness checklist: it does not create branch protection by itself unless the operator explicitly asks to run one of the write-capable helper scripts.
 
 ## What this skill verifies
 
@@ -15,7 +15,7 @@ This skill verifies five things:
 2. Each `SKILL.md` file exists and appears structurally valid.
 3. Each helper script exists and is executable.
 4. The local environment is ready, especially `gh`, `jq`, and GitHub authentication.
-5. The target repository is ready for GitHub Flow checks and restrictions, including branch visibility and required-check readiness.[web:25][web:32][web:151]
+5. The target repository is ready for GitHub Flow checks and restrictions, including branch visibility and required-check readiness.
 
 ## When to use it
 
@@ -104,7 +104,7 @@ For each `SKILL.md`, verify:
 - YAML frontmatter exists at the top.
 - `name` exists.
 - `description` exists.
-- The `name` value matches the parent folder name.[web:28][web:39][web:124]
+- The `name` value matches the parent folder name.
 
 A full schema validator is not required, but obvious frontmatter breakage is a failure.
 
@@ -136,7 +136,7 @@ Also check:
 gh auth status
 ```
 
-If GitHub authentication is missing or broken, repository-level checks cannot pass.[web:25]
+If GitHub authentication is missing or broken, repository-level checks cannot pass.
 
 ### Step 6: Verify repository access, if repo input is provided
 
@@ -156,17 +156,17 @@ If a repository is provided:
    gh ruleset check --repo OWNER/REPO --default
    ```
 
-If authentication or permissions block these checks, report `FAIL` or `PASS_WITH_WARNINGS` depending on whether the failure is local-only or permission-related.[web:25][web:19]
+If authentication or permissions block these checks, report `FAIL` or `PASS_WITH_WARNINGS` depending on whether the failure is local-only or permission-related.
 
 ### Step 7: Verify required-check readiness
 
-If the repo is meant to require CI checks, verify that those checks are likely selectable and usable. GitHub only allows required checks that have run recently in the repository, so a repo may not be ready to require checks even if workflows exist.[web:32][web:151][web:158]
+If the repo is meant to require CI checks, verify that those checks are likely selectable and usable. GitHub only allows required checks that have run recently in the repository, so a repo may not be ready to require checks even if workflows exist.
 
 Flag a warning if:
 
 - No checks have run recently.
 - The operator wants required checks but there is no known CI job name.
-- Workflows only run on branches other than the protected branch.[web:147][web:151]
+- Workflows only run on branches other than the protected branch.
 
 ### Step 8: Optional smoke tests
 
@@ -212,7 +212,7 @@ Use `PASS` when:
 Use this when:
 
 - Local files are correct, but repo permissions are limited.
-- Repo inspection works, but required checks are not ready to be enforced yet.[web:151]
+- Repo inspection works, but required checks are not ready to be enforced yet.
 - A script is present but not executable and can be fixed with `chmod +x`.
 - The setup is functionally close, but not fully ready for safe enforcement.
 
@@ -272,12 +272,12 @@ List the shortest path to a clean `PASS`.
 
 ## Guardrails
 
-- Do not assume the repo is ready for required checks just because GitHub Actions exists.[web:32][web:151]
+- Do not assume the repo is ready for required checks just because GitHub Actions exists.
 - Do not run the write script without explicit permission.
 - Do not silently ignore missing execute permissions.
 - Do not assume the default branch is `main`.
 - Do not mark repository checks as passed if GitHub auth failed.
-- Prefer concrete file and command checks over inference.[web:27]
+- Prefer concrete file and command checks over inference.
 
 ## Suggested local commands
 
@@ -316,4 +316,4 @@ bash scripts/verify-git-flow-setup.sh OWNER/REPO main
 
 ## Example interpretation
 
-If all three skills exist, both scripts are executable, `gh auth status` succeeds, the repository can be queried, and the audit script runs successfully, the setup should usually be reported as `PASS`. If required checks cannot yet be enforced because no recent CI checks exist, report `PASS_WITH_WARNINGS` and explain that a recent workflow run is needed before those checks can be selected as mandatory.[web:32][web:151][web:158]
+If all three skills exist, both scripts are executable, `gh auth status` succeeds, the repository can be queried, and the audit script runs successfully, the setup should usually be reported as `PASS`. If required checks cannot yet be enforced because no recent CI checks exist, report `PASS_WITH_WARNINGS` and explain that a recent workflow run is needed before those checks can be selected as mandatory.

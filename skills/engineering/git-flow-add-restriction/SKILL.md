@@ -5,11 +5,11 @@ description: Add or tighten GitHub Flow restrictions for a GitHub repository usi
 
 # Git Flow Add Restriction
 
-Use this skill to enforce a practical GitHub Flow policy on GitHub repositories where one developer does most of the work. The purpose is to protect `main`, require branch-and-PR workflow, and keep CI as the main gate, without accidentally creating a policy that blocks the sole maintainer from shipping changes.[web:141][web:143]
+Use this skill to enforce a practical GitHub Flow policy on GitHub repositories where one developer does most of the work. The purpose is to protect `main`, require branch-and-PR workflow, and keep CI as the main gate, without accidentally creating a policy that blocks the sole maintainer from shipping changes.
 
 ## What this skill does
 
-This skill modifies repository restrictions using `gh` and the GitHub API.[web:19][web:129]
+This skill modifies repository restrictions using `gh` and the GitHub API.
 
 It is designed for:
 
@@ -27,20 +27,20 @@ Use this skill when asked to:
 - Disable force pushes or branch deletion.
 - Apply a solo-friendly GitHub Flow baseline to one or more repos.
 
-Do not use this skill unless the operator has admin rights on the target repository, because protected branch settings are administrative controls.[web:19][web:127][web:129]
+Do not use this skill unless the operator has admin rights on the target repository, because protected branch settings are administrative controls.
 
 ## Solo-maintainer enforcement policy
 
 For solo repos, the recommended baseline is:
 
-- Require pull requests before merging to `main`, or to the detected default branch.[web:19][web:141]
+- Require pull requests before merging to `main`, or to the detected default branch.
 - Require zero mandatory human approvals by default.
-- Require at least one status check when CI exists.[web:32][web:143]
-- Disable force pushes on the protected branch.[web:127][web:143]
-- Disable deletion of the protected branch.[web:127]
-- Optionally include admins in enforcement to prevent bypassing policy accidentally, which is often useful for solo self-discipline.[web:141]
+- Require at least one status check when CI exists.
+- Disable force pushes on the protected branch.
+- Disable deletion of the protected branch.
+- Optionally include admins in enforcement to prevent bypassing policy accidentally, which is often useful for solo self-discipline.
 
-This setup preserves the GitHub Flow discipline while avoiding the common solo-maintainer trap of requiring a reviewer that does not exist.[web:141]
+This setup preserves the GitHub Flow discipline while avoiding the common solo-maintainer trap of requiring a reviewer that does not exist.
 
 ## Safety rules
 
@@ -50,7 +50,7 @@ Always follow these rules before making changes.
 2. Detect the default branch instead of assuming it is `main`.
 3. Read the current protection state before writing changes.
 4. Prefer the smallest safe change set.
-5. Never require a named status check unless that check already exists or the user explicitly requested it, because GitHub only allows required checks that have recently run in the repository.[web:99][web:32]
+5. Never require a named status check unless that check already exists or the user explicitly requested it, because GitHub only allows required checks that have recently run in the repository.
 6. Warn before enabling requirements that could lock the maintainer out of normal merges.
 7. After applying changes, verify them with a read-back audit.
 
@@ -71,14 +71,14 @@ Optional input:
 
 Unless the user asks otherwise, apply this baseline to the default branch:
 
-- Require pull request reviews before merging: enabled.[web:19]
+- Require pull request reviews before merging: enabled.
 - Required approving review count: `0`.
 - Dismiss stale reviews: `false`.
 - Require code owner reviews: `false`.
-- Required status checks: preserve existing checks if present; otherwise do not invent one.[web:99][web:32]
-- Enforce admins: `true` for stricter self-discipline, but mention this explicitly.[web:141]
-- Allow force pushes: `false`.[web:127][web:143]
-- Allow deletions: `false`.[web:127]
+- Required status checks: preserve existing checks if present; otherwise do not invent one.
+- Enforce admins: `true` for stricter self-discipline, but mention this explicitly.
+- Allow force pushes: `false`.
+- Allow deletions: `false`.
 - Required linear history: `false` unless the user wants it.
 
 ## Execution procedure
@@ -97,15 +97,15 @@ Use the default branch if none is supplied.
 gh api repos/OWNER/REPO/branches/BRANCH/protection
 ```
 
-If the endpoint returns not found or forbidden, explain whether the problem is missing permissions or missing protection.[web:129]
+If the endpoint returns not found or forbidden, explain whether the problem is missing permissions or missing protection.
 
 ### Step 3: Build the target policy payload
 
-Build JSON that preserves necessary existing fields and updates only the intended controls. For solo repos, set `required_approving_review_count` to `0` unless the user explicitly wants a higher value.[web:141]
+Build JSON that preserves necessary existing fields and updates only the intended controls. For solo repos, set `required_approving_review_count` to `0` unless the user explicitly wants a higher value.
 
 ### Step 4: Apply protection
 
-Use `gh api -X PUT` to write branch protection through the GitHub REST API.[web:19][web:129][web:131]
+Use `gh api -X PUT` to write branch protection through the GitHub REST API.
 
 ### Step 5: Verify after write
 
@@ -135,7 +135,7 @@ A safe solo baseline looks like this:
 }
 ```
 
-If specific checks exist, replace `required_status_checks` with a proper object.[web:19][web:129]
+If specific checks exist, replace `required_status_checks` with a proper object.
 
 ## Output format
 
@@ -147,7 +147,7 @@ A short bullet list of what will be changed.
 
 ### 2. Risk notes
 
-State whether the new policy could block merges, especially if required checks are named.[web:99]
+State whether the new policy could block merges, especially if required checks are named.
 
 ### 3. Apply result
 
@@ -161,7 +161,7 @@ Summarize the read-back result.
 
 ## Guardrails
 
-- Do not require 1 approval by default for a solo repo.[web:141]
-- Do not add fake required status checks.[web:99][web:32]
+- Do not require 1 approval by default for a solo repo.
+- Do not add fake required status checks.
 - Do not remove existing needed checks unless asked.
 - Do not assume the

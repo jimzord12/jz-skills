@@ -5,7 +5,7 @@ description: Verify whether a GitHub repository is correctly configured for GitH
 
 # Git Flow Check
 
-Use this skill to inspect whether a repository is actually enforcing a practical GitHub Flow policy for a solo maintainer. A solo setup still benefits from GitHub Flow, but the restrictions should emphasize branch safety, pull requests, CI, and auditability rather than requiring another human reviewer on every change.[web:127][web:129]
+Use this skill to inspect whether a repository is actually enforcing a practical GitHub Flow policy for a solo maintainer. A solo setup still benefits from GitHub Flow, but the restrictions should emphasize branch safety, pull requests, CI, and auditability rather than requiring another human reviewer on every change.
 
 ## What this skill does
 
@@ -30,7 +30,7 @@ Do not use this skill to modify settings. It is read-only by default.
 
 ## Solo-maintainer GitHub Flow policy
 
-For a solo developer, the goal is not “two-person review.” The goal is “no unsafe direct changes to `main`, every change goes through a branch and PR, and automation proves the branch is healthy before merge.” GitHub branch protection supports this through pull-request requirements, status checks, force-push blocking, and deletion protection.[web:127][web:129]
+For a solo developer, the goal is not “two-person review.” The goal is “no unsafe direct changes to `main`, every change goes through a branch and PR, and automation proves the branch is healthy before merge.” GitHub branch protection supports this through pull-request requirements, status checks, force-push blocking, and deletion protection.
 
 ### Minimum acceptable policy
 
@@ -39,18 +39,18 @@ A repository passes this skill if all of the following are true:
 - The default branch exists and is clearly the stable branch, usually `main`.
 - Direct pushes to the default branch are blocked by branch protection or an equivalent ruleset.
 - Pull requests are required before merging to the default branch.
-- At least one required status check is enforced before merge, or there is a documented reason why none can exist yet.[web:93][web:94]
-- Force pushes are disallowed on the default branch unless there is an explicit emergency exception policy.[web:127]
-- Branch deletion protection or equivalent safe defaults exist for the default branch.[web:127]
+- At least one required status check is enforced before merge, or there is a documented reason why none can exist yet.
+- Force pushes are disallowed on the default branch unless there is an explicit emergency exception policy.
+- Branch deletion protection or equivalent safe defaults exist for the default branch.
 
 ### Recommended solo-friendly policy
 
 These are strongly recommended, but not always mandatory:
 
 - Require branches to be up to date before merge when CI supports it.
-- Include administrators in the protection scope, unless there is a deliberate break-glass override process.[web:127]
+- Include administrators in the protection scope, unless there is a deliberate break-glass override process.
 - Auto-delete merged branches.
-- A CI workflow that runs on pull requests.[web:94]
+- A CI workflow that runs on pull requests.
 - A PR template describing summary, validation, and rollback notes.
 - Signed commits, code scanning, or deployment checks for higher-risk repos.
 
@@ -134,13 +134,13 @@ Capture at least these fields when present:
 
 ### Step 4: Determine whether PR-only flow is enforced
 
-A repo is PR-only if direct pushes are blocked and merge happens through pull requests or equivalent protected mechanisms.[web:127][web:129]
+A repo is PR-only if direct pushes are blocked and merge happens through pull requests or equivalent protected mechanisms.
 
 Check:
 
 - direct push blocked
 - pull requests required
-- merge not possible while required checks fail.[web:93][web:94]
+- merge not possible while required checks fail.
 
 ### Step 5: Determine whether the policy is solo-friendly
 
@@ -183,7 +183,7 @@ Use `FAIL` when any of the following is true:
 - Direct pushes to the default branch are allowed.
 - Pull requests are not required.
 - Force pushes are allowed without an explicit emergency exception rationale.
-- The branch can be merged despite failing required checks.[web:93][web:94][web:127]
+- The branch can be merged despite failing required checks.
 
 ## Output format
 
@@ -226,7 +226,7 @@ List the smallest changes needed to reach a `PASS` state.
 
 ## Guardrails
 
-- Do not assume that a green checkmark in the UI means checks are required.[web:93][web:94]
+- Do not assume that a green checkmark in the UI means checks are required.
 - Do not assume that branch protection exists just because PRs are commonly used.
 - Distinguish between “missing for GitHub Flow safety” and “missing for an ideal mature setup.”
 - For solo maintainers, prefer safety plus flow over team-style review bureaucracy.
@@ -248,4 +248,4 @@ bash scripts/check-git-flow.sh OWNER/REPO main
 
 ## Example interpretation
 
-Example: the repo requires PRs, blocks direct pushes, blocks force pushes, and requires a `ci` check, but does not require another human approval. That is a good solo GitHub Flow setup and should usually be reported as `PASS`.[web:93][web:94][web:127]
+Example: the repo requires PRs, blocks direct pushes, blocks force pushes, and requires a `ci` check, but does not require another human approval. That is a good solo GitHub Flow setup and should usually be reported as `PASS`.
