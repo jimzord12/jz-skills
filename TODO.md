@@ -1,0 +1,1 @@
+- [ ] Search and findout how to make the Claude Statusline to display the 5h and weekly limits. This guy has it `https://thegraycat.com/`
