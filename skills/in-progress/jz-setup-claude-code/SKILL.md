@@ -34,36 +34,88 @@ Check the user's argument hint:
 - `"audit-only"` → skip all installation, only report current status
 - No argument or anything else → run the full setup + audit
 
-### Step 2 — Check System Dependencies
+### Step 2 — Ensure `jq` and `git` are reachable from `bash`
 
-For each dependency, run the check command and record ✅ or ❌:
+The statusline runs as `bash ~/.claude/statusline-command.sh`. Its dependencies:
+
+| Dep | Role | Severity if missing |
+|---|---|---|
+| `jq` | Parses every field of Claude Code's session JSON | **Critical — blanks the whole status line** (each call prints `jq: command not found` to stderr, exits 0, renders nothing) |
+| `git` | Builds all of Line 1 (branch, commit, push time) | **Critical for Line 1** — Line 2 still renders |
+| `awk` | Formats token counts as `k`/`M` | Cosmetic — degrades formatting only |
+
+> **⚠️ Key lesson (this silently broke a session):** "the package manager reports jq installed" is NOT sufficient. `jq` must resolve on the PATH that **bash** sees. On Windows, `winget install jqlang.jq` drops `jq.exe` into a WinGet package folder whose shim is not on Git Bash's PATH — so the script renders nothing with no visible error. Always verify reachability *from bash*, never just trust a successful installer.
+
+**Detect the OS:**
+
+```bash
+case "$(uname -s)" in
+  Darwin*)              os="macos" ;;
+  Linux*)               os="linux" ;;
+  MINGW*|MSYS*|CYGWIN*) os="windows-gitbash" ;;
+  *)                    os="unknown" ;;
+esac
+```
+
+**Verify each dependency resolves from bash** (record ✅ / ❌):
 
 | Dependency | Check |
 |---|---|
-| `jq` | `jq --version` |
-| `git` | `git --version` |
-| `awk` | `awk --version` |
+| `jq` | `bash -lc 'command -v jq >/dev/null && jq --version'` |
+| `git` | `bash -lc 'command -v git >/dev/null && git --version'` |
+| `awk` | `bash -lc 'command -v awk >/dev/null && awk --version'` |
 
-If any are missing and mode is NOT audit-only, tell the user how to install:
+**If `jq` is missing or unreachable from bash** (and mode is NOT audit-only), install per OS:
 
-- **jq**: `sudo apt install jq` (Debian/Ubuntu) or `brew install jq` (macOS)
-- **git**: `sudo apt install git` or `brew install git`
-- **awk**: usually pre-installed as `gawk` or `mawk`
+- **macOS** → `brew install jq`
+- **Debian/Ubuntu** → `sudo apt install -y jq`
+- **Fedora** → `sudo dnf install -y jq`
+- **Windows (Git Bash)** → `winget install --id jqlang.jq --accept-source-agreements --accept-package-agreements`, then **shim `jq.exe` onto the Git Bash PATH** (winget will NOT do this for you):
 
-### Step 3 — Set Up the Statusline
+  ```bash
+  # Locate the real binary winget installed and copy it into ~/bin
+  mkdir -p ~/bin
+  JQ_SRC="$(find "$(cygpath -u "$LOCALAPPDATA")/Microsoft/WinGet/Packages" -iname 'jq.exe' 2>/dev/null | head -1)"
+  [ -n "$JQ_SRC" ] && cp "$JQ_SRC" ~/bin/jq.exe
+  # Ensure ~/bin is on bash's PATH (idempotent)
+  grep -q 'export PATH="$HOME/bin:$PATH"' ~/.bashrc 2>/dev/null || echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
+  ```
 
-Skip this step if running audit-only.
+**If `git` is missing:** on Windows install *Git for Windows* (which also provides Git Bash + `git`); on macOS `brew install git`; on Linux `sudo apt/dnf install -y git`.
+
+**`awk`** is virtually always present (`gawk`/`mawk` on Linux, preinstalled on macOS, shipped with Git Bash). Only act if the check fails.
+
+**MANDATORY re-verification after any install** — re-run the bash reachability check above. A zero-exit installer does NOT prove bash can see `jq`. If `bash -lc 'command -v jq'` still returns nothing, the shim did not land on PATH — fix it before continuing. Do not proceed to Step 3 until `jq` resolves from bash.
+
+### Step 3 — Set Up & Validate the Statusline
+
+Skip this step if running audit-only. Requires `jq` reachable from bash (Step 2).
 
 1. Read `scripts/statusline-command.sh` from this skill's directory.
-2. Write its content to `~/.claude/statusline-command.sh` using the Write tool.
+2. Write its content **verbatim** to `~/.claude/statusline-command.sh` using the Write tool. Do not "fix" or reformat it — the script is already portable (see Notes).
 3. Make it executable: `chmod +x ~/.claude/statusline-command.sh`
-4. Safely merge the `statusLine` key into `~/.claude/settings.json` using `jq` — do NOT overwrite the entire file:
+4. Safely **merge** the `statusLine` key into `~/.claude/settings.json` using `jq` — never overwrite the whole file (the user may have custom env vars, tokens, or plugin keys):
 
-```bash
-jq '.statusLine = {"type": "command", "command": "bash ~/.claude/statusline-command.sh"}' ~/.claude/settings.json > /tmp/settings-tmp.json && mv /tmp/settings-tmp.json ~/.claude/settings.json
-```
+   ```bash
+   jq '.statusLine = {"type": "command", "command": "bash ~/.claude/statusline-command.sh"}' ~/.claude/settings.json > /tmp/settings-tmp.json && mv /tmp/settings-tmp.json ~/.claude/settings.json
+   ```
 
-If `jq` is not installed, stop and ask the user to install it first — merging JSON without `jq` risks corrupting settings.
+5. **Validate end-to-end** by piping representative JSON through the script and asserting real output. Run it from inside a git working tree (e.g. the current project) so Line 1 renders too:
+
+   ```bash
+   echo '{"model":{"display_name":"Opus 4.8"},"workspace":{"current_dir":"'"$PWD"'"}}' \
+     | bash ~/.claude/statusline-command.sh
+   ```
+
+   Interpret the result:
+
+   | Output | Meaning | Action |
+   |---|---|---|
+   | **2 non-empty ANSI-colored lines** | ✅ Working | Done |
+   | **0 lines**, or any line containing `jq: command not found` | ❌ `jq` is NOT reachable from bash despite being "installed" | Return to Step 2 (Windows shim / OS install), then re-validate. **Do not report success.** |
+   | **1 line only** | Not run from a git repo, or `git` missing | Acceptable only if confirmed not-a-repo; otherwise fix `git` (Step 2) |
+
+   This validation is the real proof of success — a green dependency check or a successful installer message is not.
 
 ### Step 4 — Audit Plugins & Marketplace
 
@@ -100,6 +152,7 @@ Dependencies
 Statusline
   ✅ Script   — ~/.claude/statusline-command.sh (executable)
   ✅ Settings — statusLine key configured
+  ✅ Validate — sample JSON rendered 2 lines
 
 Plugins (11/11)
   ✅ frontend-design       ✅ superpowers
@@ -128,7 +181,8 @@ To fix:
 
 ## Important Notes
 
+- **`jq` must resolve from `bash`, not merely be "installed".** On Windows, `winget` installs `jq.exe` but does not put it on Git Bash's PATH — shim it into `~/bin` (Step 2) or the status line renders blank with no visible error. Always confirm via the end-to-end validation in Step 3.
+- The statusline script is self-contained and depends only on `jq` (critical), `git` (Line 1), and `awk` (cosmetic formatting). It is portable as-is — do not edit it during setup (the Windows `cygpath` block is guarded and a no-op on macOS/Linux; `date +%s` has no GNU/BSD quirks).
 - This skill does NOT configure environment variables (API keys, model mappings, base URLs). Those are user-specific — set them manually in `~/.claude/settings.json`.
-- The statusline script is self-contained and only depends on `jq`, `git`, and `awk`.
 - Plugin installation uses Claude Code's built-in `/install-plugin` — this skill audits and reports, but cannot install plugins programmatically.
 - Always use `jq` to merge settings. Never overwrite the full file — the user may have custom env vars, auth tokens, or other plugins.
