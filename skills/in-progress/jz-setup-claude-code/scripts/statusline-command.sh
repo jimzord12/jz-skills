@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Status line script for Claude Code — two lines:
-#   Line 1: branch | last commit | pushed time
-#   Line 2: model | effort | context bar | cost | duration
+#   Line 1: branch | dirty state | last commit | pushed time
+#   Line 2: model | effort | context bar | 5h limit | weekly limit | duration
 # Receives JSON input via stdin from Claude Code.
 
 input=$(cat)
@@ -24,6 +24,11 @@ sep=" ${dim}│${reset} "
 
 # ── Current working directory ──
 cwd=$(echo "$input" | jq -r '.workspace.current_dir // empty')
+# On Windows (Git Bash/MSYS), Claude Code sends a backslash path like
+# C:\Users\name — `cd` can't handle that, so convert it to POSIX form.
+if [ -n "$cwd" ] && command -v cygpath >/dev/null 2>&1; then
+  cwd=$(cygpath -u "$cwd" 2>/dev/null || echo "$cwd")
+fi
 
 # ═══════════════════════════════════════════════════════════════
 # LINE 1: branch | last commit | pushed time
@@ -37,6 +42,30 @@ if [ -n "$cwd" ]; then
     if [ -n "$branch" ]; then
       line1_parts+=("${cyan}${branch}${reset}")
     fi
+
+    # Dirty state: +N staged | ~N modified | ?N untracked | ✓ clean
+    status=$(cd "$cwd" 2>/dev/null && git status --porcelain 2>/dev/null)
+    staged=0; modified=0; untracked=0
+    while IFS= read -r st_line; do
+      [ -z "$st_line" ] && continue
+      case "$st_line" in
+        '??'*) untracked=$((untracked + 1)); continue ;;
+      esac
+      x=${st_line:0:1}
+      y=${st_line:1:1}
+      case "$x" in [MADRC]) staged=$((staged + 1)) ;; esac
+      case "$y" in [MD]) modified=$((modified + 1)) ;; esac
+    done <<< "$status"
+    dirty=""
+    [ "$staged" -gt 0 ]    && dirty="${dirty}${green}+${staged}${reset} "
+    [ "$modified" -gt 0 ]  && dirty="${dirty}${yellow}~${modified}${reset} "
+    [ "$untracked" -gt 0 ] && dirty="${dirty}${dim}?${untracked}${reset} "
+    if [ -z "$dirty" ]; then
+      dirty="${green}✓${reset}"
+    else
+      dirty="${dirty% }"  # trim trailing space
+    fi
+    line1_parts+=("$dirty")
 
     # Last commit message (truncated to 50 chars)
     last_msg=$(cd "$cwd" 2>/dev/null && git log -1 --pretty=format:%s 2>/dev/null)
@@ -163,6 +192,52 @@ else
   dur_segment=""
 fi
 
+# ── Rate limits (5-hour + weekly) ──
+# Helper: color a percentage (0-49 green, 50-79 yellow, 80+ red)
+rl_color() {
+  local p=$1
+  if [ "$p" -ge 80 ]; then echo "$red"
+  elif [ "$p" -ge 50 ]; then echo "$yellow"
+  else echo "$green"; fi
+}
+# Helper: format seconds-until-reset as a compact relative string
+rl_reset_fmt() {
+  local resets_at=$1
+  local now rem
+  now=$(date +%s)
+  rem=$((resets_at - now))
+  [ "$rem" -le 0 ] && { echo "now"; return; }
+  if [ "$rem" -ge 86400 ]; then
+    echo "$((rem / 86400))d"
+  elif [ "$rem" -ge 3600 ]; then
+    echo "$((rem / 3600))h$(((rem % 3600) / 60))m"
+  elif [ "$rem" -ge 60 ]; then
+    echo "$((rem / 60))m"
+  else
+    echo "${rem}s"
+  fi
+}
+
+build_rl_segment() {
+  local label=$1 pct_raw=$2 resets_at=$3
+  [ -z "$pct_raw" ] && return
+  local pct color reset_str=""
+  pct=$(printf '%.0f' "$pct_raw" 2>/dev/null) || return
+  color=$(rl_color "$pct")
+  if [ -n "$resets_at" ]; then
+    reset_str=" ${dim}($(rl_reset_fmt "$resets_at"))${reset}"
+  fi
+  echo "${dim}${label}${reset} ${color}${pct}%${reset}${reset_str}"
+}
+
+rl_five_pct=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
+rl_five_reset=$(echo "$input" | jq -r '.rate_limits.five_hour.resets_at // empty')
+rl_seven_pct=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
+rl_seven_reset=$(echo "$input" | jq -r '.rate_limits.seven_day.resets_at // empty')
+
+rl_five_segment=$(build_rl_segment "5h" "$rl_five_pct" "$rl_five_reset")
+rl_seven_segment=$(build_rl_segment "7d" "$rl_seven_pct" "$rl_seven_reset")
+
 # ── Build Line 2 ──
 line2_parts=()
 if [ -n "$model" ]; then
@@ -173,6 +248,12 @@ if [ -n "$effort_segment" ]; then
 fi
 if [ -n "$ctx_segment" ]; then
   line2_parts+=("$ctx_segment")
+fi
+if [ -n "$rl_five_segment" ]; then
+  line2_parts+=("$rl_five_segment")
+fi
+if [ -n "$rl_seven_segment" ]; then
+  line2_parts+=("$rl_seven_segment")
 fi
 if [ -n "$dur_segment" ]; then
   line2_parts+=("$dur_segment")
