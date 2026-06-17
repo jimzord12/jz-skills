@@ -12,9 +12,9 @@ description: |
   ticket. Accepts vague input. Rejects pure green field vision dumps.
 metadata:
   version: 2.0.0
-  author: Dimitrios Stamatakis
+  author: jimzord12
   created_at: May 23, 2026
-  updated_at: May 23, 2026 12:40 UTC
+  updated_at: Jun 17, 2026
 ---
 
 # /to-features-brownfield

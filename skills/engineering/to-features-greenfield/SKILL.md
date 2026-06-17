@@ -9,10 +9,13 @@ description: |
   Triggers on: "I want to build...", "new SaaS idea", "green field", "from scratch",
   raw vision dumps, or any request that sounds like a whole product rather than a single
   capability on an existing system.
-version: 1.0.0
-author: jimzord-stam
-agents: [claude-code, claude-desktop, claude-api]
-tags: [engineering, planning, decomposition, green-field, pocock-stack]
+metadata:
+  version: 1.0.0
+  author: jimzord12
+  created_at: May 23, 2026
+  updated_at: Jun 17, 2026
+  agents: [claude-code, claude-desktop, claude-api]
+  tags: [engineering, planning, decomposition, green-field, pocock-stack]
 ---
 
 # /to-features-greenfield

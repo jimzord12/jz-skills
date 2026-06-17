@@ -93,9 +93,15 @@ metadata:
   updated_at: Jun 17, 2026
 ```
 
-> A `scripts/check-skill-versions.mjs` check (changesets-style: fail if a skill's content changed
-> since the last `v*` tag but `metadata.version` wasn't bumped) enforces this. _(planned — see the
-> skills-management plan §3)._
+Enforce it before tagging a release:
+
+```sh
+node scripts/check-skill-versions.mjs
+```
+
+It is changesets-style: for every own skill, if anything in the skill's directory changed since the
+last `v*` tag but `metadata.version` wasn't bumped, it fails and lists the offenders. With no
+release tag yet, it passes (nothing to diff against).
 
 ---
 

@@ -1,6 +1,11 @@
 ---
 name: to-features
 description: Derives a feature backlog from CONTEXT.md and nearby domain artifacts, then writes stable feature artifacts under docs/features. Use when the user wants to turn a domain model, completed grilling session, ADR set, or existing codebase context into an ordered feature list, decide which features deserve grilling first, or identify which ones can go straight to issues, TDD or implementation.
+metadata:
+  version: 0.1.0
+  author: jimzord12
+  created_at: Jun 17, 2026
+  updated_at: Jun 17, 2026
 ---
 
 # To Features

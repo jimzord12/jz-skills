@@ -1,6 +1,11 @@
 ---
 name: git-flow-add-restriction
 description: Add or tighten GitHub Flow restrictions for a GitHub repository using gh CLI in a solo developer setup. Use when asked to enforce pull-request-only main branch protection, required status checks, force-push blocking, or other branch safety rules without requiring a second reviewer.
+metadata:
+  version: 0.1.0
+  author: jimzord12
+  created_at: Jun 17, 2026
+  updated_at: Jun 17, 2026
 ---
 
 # Git Flow Add Restriction

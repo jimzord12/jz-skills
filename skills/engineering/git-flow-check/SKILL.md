@@ -1,6 +1,11 @@
 ---
 name: git-flow-check
 description: Verify whether a GitHub repository is correctly configured for GitHub Flow, especially for a solo developer setup. Use when asked to audit branch protection, required checks, pull request rules, rulesets, or whether main is safely protected without blocking a single maintainer workflow.
+metadata:
+  version: 0.1.0
+  author: jimzord12
+  created_at: Jun 17, 2026
+  updated_at: Jun 17, 2026
 ---
 
 # Git Flow Check

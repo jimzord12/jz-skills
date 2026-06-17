@@ -1,6 +1,11 @@
 ---
 name: verify-git-flow-setup
 description: Verify that the git-flow-check and git-flow-add-restriction skills are installed correctly and that a repository is ready for solo-maintainer GitHub Flow. Use when asked to validate skill installation, script executability, gh authentication, branch protection visibility, required checks readiness, or end-to-end GitHub Flow setup.
+metadata:
+  version: 0.1.0
+  author: jimzord12
+  created_at: Jun 17, 2026
+  updated_at: Jun 17, 2026
 ---
 
 # Verify Git Flow Setup
