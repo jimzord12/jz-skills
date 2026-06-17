@@ -8,9 +8,13 @@ It is am highly inspired by [Matt Pocock's work on AI Agent skills](https://gith
 
 ## Conventions
 
-- I install the **base skills** using the `npx skills@latest add <skill-name>` command, which creates a skill folder under `.agents/skills/<skill-name>`.
-- My **own skills**, which are either, completely new, or forks of existing skills, are stored under `skills/<domain>/<subdomain>/<skill-name>`.
-- I use the `metadata` field in the skill YAML front matter to track version, author, and timestamps for my own skills. I ignore these fields for base skills.
+Skills live in three locations, each with a distinct role (the **three-location law**):
+
+- `.agents/skills/<name>/` — **base skills**, vendored via `npx skills add` and pinned in `skills-lock.json`. **Read-only** — never hand-edit; fork before changing.
+- `skills/<domain>/<sub>/<name>/` — **my own skills and forks**. The source of truth for everything I own. Tracked with `metadata` (version/author/timestamps) in the frontmatter; base skills are exempt.
+- `.claude/skills/<name>` — a **generated, gitignored** symlink view for Claude Code discovery. Regenerate with `node scripts/sync-skills.mjs`; never edit directly.
+
+See **[CONTRIBUTING.md](./CONTRIBUTING.md)** for the full law, the fork-before-edit rule, versioning, and distribution.
 
 ---
 
