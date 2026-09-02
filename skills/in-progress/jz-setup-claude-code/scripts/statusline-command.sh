@@ -111,7 +111,6 @@ done
 
 # ── Model name ──
 model=$(echo "$input" | jq -r '.model.display_name // .model.id // empty')
-model=$(echo "$model" | sed 's/\[1m\]/[1m]/g')
 
 # ── Reasoning effort level ──
 # Orange = ANSI 38;5;208, Purple = ANSI 38;5;129
@@ -136,12 +135,20 @@ fi
 ctx_input=$(echo "$input" | jq -r '.context_window.total_input_tokens // empty')
 ctx_window_size=$(echo "$input" | jq -r '.context_window.context_window_size // empty')
 ctx_segment=""
-if [ -n "$ctx_input" ]; then
-  effective_max=$MAX_CONTEXT_WINDOW
-  if [ -z "$effective_max" ] || [ "$effective_max" -le 0 ] 2>/dev/null; then
-    effective_max=$ctx_window_size
-  fi
 
+# Treat anything non-numeric as absent so the arithmetic below cannot throw.
+case "$ctx_input" in ''|*[!0-9]*) ctx_input="" ;; esac
+effective_max=$MAX_CONTEXT_WINDOW
+case "$effective_max" in ''|*[!0-9]*) effective_max=0 ;; esac
+if [ "$effective_max" -le 0 ]; then
+  effective_max=$ctx_window_size
+fi
+# Claude Code does not always send context_window_size. Without a usable
+# window there is nothing to divide by, so skip the bar rather than let the
+# shell raise "division by 0" and silently drop the whole segment.
+case "$effective_max" in ''|*[!0-9]*) effective_max=0 ;; esac
+
+if [ -n "$ctx_input" ] && [ "$effective_max" -gt 0 ]; then
   ctx_used=$((ctx_input * 100 / effective_max))
   if [ "$ctx_used" -gt 100 ]; then
     ctx_used=100
@@ -203,9 +210,17 @@ rl_color() {
 # Helper: format seconds-until-reset as a compact relative string
 rl_reset_fmt() {
   local resets_at=$1
-  local now rem
+  local now rem target
+  # resets_at arrives as epoch seconds, but tolerate an ISO-8601 timestamp
+  # too: bare arithmetic on "2026-09-02T18:00:00Z" aborts the whole segment.
+  case "$resets_at" in
+    ''|*[!0-9]*) target=$(date -d "$resets_at" +%s 2>/dev/null) ;;
+    *)           target=$resets_at ;;
+  esac
+  # Unparseable: print nothing, and the caller omits the suffix entirely.
+  case "$target" in ''|*[!0-9]*) return ;; esac
   now=$(date +%s)
-  rem=$((resets_at - now))
+  rem=$((target - now))
   [ "$rem" -le 0 ] && { echo "now"; return; }
   if [ "$rem" -ge 86400 ]; then
     echo "$((rem / 86400))d"
@@ -221,12 +236,14 @@ rl_reset_fmt() {
 build_rl_segment() {
   local label=$1 pct_raw=$2 resets_at=$3
   [ -z "$pct_raw" ] && return
-  local pct color reset_str=""
+  local pct color reset_rel="" reset_str=""
   pct=$(printf '%.0f' "$pct_raw" 2>/dev/null) || return
+  case "$pct" in ''|*[!0-9]*) return ;; esac
   color=$(rl_color "$pct")
-  if [ -n "$resets_at" ]; then
-    reset_str=" ${dim}($(rl_reset_fmt "$resets_at"))${reset}"
-  fi
+  # Only append the "(2h5m)" suffix when the reset time actually parsed —
+  # otherwise the segment renders a bare, meaningless "()".
+  [ -n "$resets_at" ] && reset_rel=$(rl_reset_fmt "$resets_at")
+  [ -n "$reset_rel" ] && reset_str=" ${dim}(${reset_rel})${reset}"
   echo "${dim}${label}${reset} ${color}${pct}%${reset}${reset_str}"
 }
 
