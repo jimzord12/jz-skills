@@ -1,8 +1,11 @@
 # Expected Plugins & Marketplace Sources
 
+The manifest this skill audits against. The audit *procedure* lives in Step 4 of `SKILL.md`;
+this file is only the list of what should be there.
+
 ## Plugin Manifest
 
-| Plugin | Namespace | Source |
+| Plugin | Install id | Marketplace |
 |---|---|---|
 | frontend-design | `frontend-design@claude-plugins-official` | claude-plugins-official |
 | superpowers | `superpowers@claude-plugins-official` | claude-plugins-official |
@@ -18,15 +21,24 @@
 
 Total: **11 plugins**
 
+> This list is a hand-maintained snapshot of one person's setup. Refresh it from a known-good
+> machine with `claude plugin list --json` rather than editing it from memory.
+
 ## Marketplace Sources
 
-| Marketplace ID | Type | Repository |
-|---|---|---|
-| `context-mode` | GitHub | `mksglu/context-mode` |
+| Marketplace ID | Type | Repository | Registered by default |
+|---|---|---|---|
+| `claude-plugins-official` | GitHub | `anthropics/claude-plugins-official` | Yes |
+| `context-mode` | GitHub | `mksglu/context-mode` | **No — must be added** |
 
-### Settings JSON Shape
+Add the missing one with:
 
-The marketplace is registered under `extraKnownMarketplaces` in `~/.claude/settings.json`:
+```sh
+claude plugin marketplace add mksglu/context-mode
+```
+
+Which is equivalent to this entry under `extraKnownMarketplaces` in the resolved `settings.json`
+(shown for recognition when reading a settings file — prefer the CLI for writing it):
 
 ```json
 {
@@ -40,13 +52,3 @@ The marketplace is registered under `extraKnownMarketplaces` in `~/.claude/setti
   }
 }
 ```
-
-## How to Audit
-
-Read `~/.claude/settings.json` and check the `enabledPlugins` object. For each plugin in the manifest above:
-
-- Key exists and `true` → ✅ installed and enabled
-- Key exists and `false` → ⚠️ installed but disabled
-- Key missing → ❌ not installed
-
-For marketplace sources, check `extraKnownMarketplaces` for the `context-mode` entry.

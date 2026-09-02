@@ -1,0 +1,4 @@
+# Shipped shell scripts must keep LF in the working tree on every platform.
+# A CRLF checkout leaves "#!/usr/bin/env bash\r" in the shebang, which Git
+# Bash tolerates but WSL, macOS and Linux shells do not.
+*.sh text eol=lf
